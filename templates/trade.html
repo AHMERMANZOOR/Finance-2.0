@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block title %}
+  Sell
+{% endblock%}
+
+{% block main %}
+    <form action="/sell" method="post">
+        <div class="dropdown">
+            <button class="dropbtn">Select Company</button>
+            <div class="dropdown-content">
+            {% for log_d in data%}
+              <a href="/tradeprofile">{{log_d['comp_name']}}</a>
+            {% endfor %}
+            </div>
+        </div>
+        <input class="btn" type="text" id="shares">
+        <button class="btn-primary btn" type="submit" id="shares">Sell</button>
+    </form>
+{% endblock %}
