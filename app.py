@@ -257,7 +257,6 @@ def buy():
         # Selecting user money from users
         money = db.execute("SELECT cash FROM registration WHERE id = ?;", session["user_id"])
         
-
         # Checking if user has enough money to buy the stock
         if (data["Price"] * float(request.form.get("shares"))) > money[0]["cash"]:
             return apology("You don't have enough money", 400)
@@ -269,12 +268,12 @@ def buy():
                    (money[0]["cash"] - data["Price"] * float(request.form.get("shares"))),
                    request.form.get("shares"),date.today(),now.strftime("%H:%M:%S"))
         # Chexking whether the user owns that stock before or not.
-        nshare = db.execute("SELECT shares FROM Share WHERE user_id = ? AND comp_name = ?;", session["user_id"], data["Name"])
+        nshare = db.execute("SELECT shares FROM Share WHERE user_id = ? AND comp_name = ? AND symbol=?;", session["user_id"], data["Name"],request.form.get("symbol"))
         if len(nshare[0]) < 1:
             db.execute("INSERT INTO Share(user_id,comp_name,shares,symbol) VALUES(?,?,?,?);",
                 session["user_id"],data["Symbol"],data["Name"],request.form.get("shares"))
         else:
-            share = db.execute("SELECT shares FROM transcations WHERE user_id = ? AND comp_name = ? ORDER BY date AND time DESC;", session["user_id"], data["Name"])
+            share = db.execute("SELECT shares FROM Share WHERE user_id = ? AND comp_name = ? AND symbol = ?;", session["user_id"], data["Name"], request.form.get("symbol"))
             db.execute("UPDATE Share SET shares = ? WHERE user_id = ? AND symbol = ? AND comp_name = ?;",request.form.get("shares") + share[0]["shares"],
                 session["user_id"],data["Symbol"],data["Name"])
 
@@ -293,11 +292,11 @@ def sell():
     """Sell shares of stock"""
     data = db.execute("SELECT * FROM Share WHERE user_id = ?;",session["user_id"])
     if request.method == "GET":
-        return render_template("trade.html", data=data)
+        return render_template("Sell.html", data=data)
     else:
         stock = lookup(request.form.get("symbol"))
         shares = int(request.form.get("shares"))
-        share = db.execute("SELECT shares FROM transcations WHERE user_id = ? AND comp_name = ? ORDER BY date AND time DESC;", session["user_id"], stock)
+        share = db.execute("SELECT shares FROM Share WHERE user_id = ? AND comp_name = ? AND symbol = ?;", session["user_id"], stock["Name"],stock["Symbol"])
         cash = db.execute("SELECT cash FROM registration WHERE id = ?;", session["user_id"])
 
         # Checking if shares isn't negative or greater than the user own and also checking-
@@ -311,14 +310,14 @@ def sell():
         # Selling the stocks
         cost = (stock["Price"] * shares)
         user_cash = cash[0]["cash"] + cost
-        db.execute("INSERT INTO registration(cash) VALUES(?);",user_cash)
+        db.execute("UPDATE registration SET cash = ? WHERE id = ?;",user_cash,session["user_id"])
         db.execute("INSERT INTO transcations(user_id,transcation,symbol,comp_name,cost,cash,shares,date,time) VALUES(?,?,?,?,?,?,?,?,?);",
                    session["user_id"],'Sell',stock["Symbol"],stock["Name"],cost,user_cash,shares,date.today(),
                    now.strftime("%H:%M:%S"))
         # Chexking whether the user owns that stock before or not.
-        share = db.execute("SELECT shares FROM transcations WHERE user_id = ? AND comp_name = ? ORDER BY date AND time DESC;", session["user_id"], data["Name"])
         db.execute("UPDATE Share SET shares = ? WHERE user_id = ? AND symbol = ? AND comp_name = ?;",share[0]["shares"] - request.form.get("shares"),
             session["user_id"],stock["Symbol"],stock["Name"])
+        db.execute("DELETE FROM Share WHERE shares = 0;")
 
         # Redirecting back to home page
         return redirect("/")
