@@ -177,9 +177,9 @@ def quote():
         # Calling lookup function
         data = lookup(request.form.get("symbol").upper())
         if data == None:
-            return apology("must provide symbol a symbol that exists", 400)
+            return apology("must provide symbol a that is on Yahoo Stock Page. Please go to https://finance.yahoo.com/", 400)
         
-        database = db.execute("SELECT * FROM transcations WHERE user_id = ? AND transcation ='bought' AND symbol = ?;", session["user_id"],request.form.get("symbol"))
+        database = db.execute("SELECT * FROM Share WHERE user_id = ? AND symbol = ?;", session["user_id"],request.form.get("symbol"))
 
         if len(database) < 1: 
 
@@ -208,9 +208,9 @@ def crypto():
         # Calling lookup function
         data = lookup(request.form.get("symbol").upper())
         if data == None:
-            return apology("must provide symbol a that is on Yahoo Stock Page", 400)
+            return apology("must provide symbol a that is on Yahoo Stock Page. Please go to https://finance.yahoo.com/", 400)
         
-        database = db.execute("SELECT * FROM transcations WHERE user_id = ? AND transcation ='bought' AND symbol = ?;", session["user_id"],request.form.get("symbol"))
+        database = db.execute("SELECT * FROM Share WHERE user_id = ? AND symbol = ?;", session["user_id"],request.form.get("symbol"))
         if len(database) < 1: 
 
             # Redirect user to profile page of the stock
