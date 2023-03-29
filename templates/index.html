@@ -32,7 +32,7 @@
                     {% for price in price %}
                     <td>{{price | usd}}</td>
                     {% endfor %}
-                    <td>{{purchase_data["price"] | usd}}</td>
+                    <td>{{totalSharePrice | usd}}</td>
                 </tr>
             {% endfor %}
         </tbody>

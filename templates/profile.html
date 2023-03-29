@@ -11,7 +11,6 @@
                 <td>Symbol</td>
                 <td>Price</td>
                 <td>Shares</td>
-                <td>Do</td>
             </tr>
         </thead>
         <tbody>
@@ -19,8 +18,13 @@
                 <td>{{placeholder["Name"]}}</td>
                 <td>{{placeholder["Symbol"]}}</td>
                 <td>{{placeholder["Price"] | usd}}</td>
-                <td><form action='{{do}}'><input type="submit" id="shares" name="shares" class = "btn" style="background-color: gray; width: 50%;"></form></td>
-                <td><form action='{{do}}' method="post"><button class="btn btn-primary" name="symbol" id="symbol" type="submit" value='{{placeholder["Symbol"]}}' >{{Buy}}</button></form></td>
+                <td>
+                    <form action="{{do}}" method="post">
+                        <input type="number" id="shares" name="shares" class = "btn" style="background-color: gray; width: 50%;">
+                        <button class="btn btn-primary" name="symbol" id="symbol" type="submit" value='{{placeholder["Symbol"]}}' >Buy</button>
+                        <button class="btn btn-primary" name="symbol" id="symbol" type="submit" value='{{placeholder["Symbol"]}}' >Sell</button>
+                    </form>
+                </td>
             </tr>
         </tbody>
     </table>

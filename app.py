@@ -7,7 +7,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import date, datetime
 from time import time
 
-from helpers import apology, login_required, lookup, usd, lookup_crypto
+from helpers import apology, login_required, lookup, usd
 
 # Configure application
 app = Flask(__name__)
@@ -147,20 +147,20 @@ def login():
 @login_required
 def home():
     """Show portfolio of stocks"""
-    purchase_data = db.execute("SELECT * FROM transcations WHERE user_id = ? AND transcation ='Update';", session["user_id"])
+    purchase_data = db.execute("SELECT * FROM Share WHERE user_id = ?;", session["user_id"])
     user = db.execute("SELECT cash FROM registration WHERE id = ?;", session["user_id"])
+    totalSharePrice = 0
     current_price = []
     name = []
     total_user = user[0]["cash"]
     print(user)
     for data in purchase_data:
         data1 = lookup(data["comp_name"])
-        current_price.append(data1["cost"])
-        name.append(data1["symbol"])
-    for symbol in  name:
-        price = lookup(symbol)
-        total_user += price["Current price"]
-    return render_template("index.html", data=purchase_data, price=current_price, name=name, cash=user,grand_total=total_user)
+        name.append(data1["Symbol"])
+        current_price.append(data1["Price"])
+        totalSharePrice += data1["Price"]
+        total_user += data1["Price"]
+    return render_template("index.html", data=purchase_data, price=current_price, name=name, cash=user,grand_total=total_user, totalSharePrice=totalSharePrice)
 
 
 @app.route("/company", methods=["GET", "POST"])
@@ -180,13 +180,14 @@ def quote():
             return apology("must provide symbol a symbol that exists", 400)
         
         database = db.execute("SELECT * FROM transcations WHERE user_id = ? AND transcation ='bought' AND symbol = ?;", session["user_id"],request.form.get("symbol"))
+
         if len(database) < 1: 
 
             # Redirect user to profile page of the stock
-            return render_template("profile.html", placeholder=data,Buy="Buy")
+            return render_template("profile.html", placeholder=data,do='/buy')
         else:
             # Redirect user to profile page of the stock
-            return render_template("profile.html", placeholder=data,Buy="Sell")
+            return render_template("profile.html", placeholder=data,do='/sell')
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
@@ -205,7 +206,7 @@ def crypto():
             return apology("must provide symbol", 400)
 
         # Calling lookup function
-        data = lookup_crypto(request.form.get("symbol").upper())
+        data = lookup(request.form.get("symbol").upper())
         if data == None:
             return apology("must provide symbol a that is on Yahoo Stock Page", 400)
         
@@ -213,10 +214,10 @@ def crypto():
         if len(database) < 1: 
 
             # Redirect user to profile page of the stock
-            return render_template("profile.html", placeholder=data,Buy="Buy",do='/buy')
+            return render_template("profile.html", placeholder=data,do='/buy')
         else:
             # Redirect user to profile page of the stock
-            return render_template("profile.html", placeholder=data,Buy="Sell",do='/sell')
+            return render_template("profile.html", placeholder=data,do='/sell')
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
@@ -251,7 +252,7 @@ def buy():
             return apology("must provide a valid number that is a positive integer", 400)
 
         # Calling lookup function
-        data = lookup_crypto(request.form.get("symbol"))
+        data = lookup(request.form.get("symbol"))
 
         # Selecting user money from users
         money = db.execute("SELECT cash FROM registration WHERE id = ?;", session["user_id"])
@@ -262,13 +263,13 @@ def buy():
             return apology("You don't have enough money", 400)
 
         # Buying the stock
-        db.execute("INSERT INTO registration(cash) VALUES(?) WHERE id = ?;",(money[0]["cash"] - data["price"] * float(request.form.get("shares"))),session["user_id"])
+        db.execute("UPDATE registration cash = ? WHERE id = ?;",(money[0]["cash"] - data["Price"] * float(request.form.get("shares"))),session["user_id"])
         db.execute("INSERT INTO transcations(user_id,transcation,symbol,comp_name,cost,cash,shares,date,time) VALUES(?,?,?,?,?,?,?,?,?);",
                    session["user_id"],'Buy',data["Symbol"],data["Name"],data["Price"] * float(request.form.get("shares")),
-                   (money[0]["cash"] - data["price"] * float(request.form.get("shares"))),
+                   (money[0]["cash"] - data["Price"] * float(request.form.get("shares"))),
                    request.form.get("shares"),date.today(),now.strftime("%H:%M:%S"))
         # Chexking whether the user owns that stock before or not.
-        nshare = db.execute("SELECT shares FROM shares WHERE user_id = ? AND comp_name = ?;", session["user_id"], data["Name"])
+        nshare = db.execute("SELECT shares FROM Share WHERE user_id = ? AND comp_name = ?;", session["user_id"], data["Name"])
         if len(nshare[0]) < 1:
             db.execute("INSERT INTO Share(user_id,comp_name,shares,symbol) VALUES(?,?,?,?);",
                 session["user_id"],data["Symbol"],data["Name"],request.form.get("shares"))
@@ -294,7 +295,7 @@ def sell():
     if request.method == "GET":
         return render_template("trade.html", data=data)
     else:
-        stock = lookup_crypto(request.form.get("symbol"))
+        stock = lookup(request.form.get("symbol"))
         shares = int(request.form.get("shares"))
         share = db.execute("SELECT shares FROM transcations WHERE user_id = ? AND comp_name = ? ORDER BY date AND time DESC;", session["user_id"], stock)
         cash = db.execute("SELECT cash FROM registration WHERE id = ?;", session["user_id"])

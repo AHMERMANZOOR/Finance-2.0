@@ -1,8 +1,3 @@
-import finnhub
-import datetime
-import pandas as pd
-from pandas_datareader import data as pdr
-
 from flask import redirect, render_template, request, session
 from functools import wraps
 
@@ -39,26 +34,6 @@ def login_required(f):
 
 
 def lookup(symbol):
-    """Look up quote for symbol."""
-    # Looking up the symbol
-    finnhub_client = finnhub.Client(api_key="cgduatpr01qpf4i2c1dgcgduatpr01qpf4i2c1e0")
-    result = finnhub_client.quote(symbol)
-    company_profile = finnhub_client.symbol_lookup(symbol)
-    symbol = list(company_profile["result"])
-    return {
-        "Current price" : result["c"],
-        "Change" : result["d"],
-        "Percent change" : result["dp"],
-        "High price of the day" : result["h"],
-        "Low price of the day" : result["l"],
-        "Open price of the day" : result["o"],
-        "Previous close price" : result["pc"],
-        "Symbol" : symbol[0]["symbol"],
-        "Company" : symbol[0]["description"]
-        }
-
-
-def lookup_crypto(symbol):
     ticker = yf.Ticker(symbol).info
     return {
         'Name' : ticker['longName'],
